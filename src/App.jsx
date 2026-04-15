@@ -4,8 +4,8 @@ import { AnimatedCharacters } from "./components";
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function App() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("demo@example.com");
+  const [password, setPassword] = useState("password123");
   const [showPassword, setShowPassword] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [isPasswordFocused, setIsPasswordFocused] = useState(false);
@@ -14,7 +14,9 @@ function App() {
   const [errorMsg, setErrorMsg] = useState("");
   const [emailError, setEmailError] = useState(false);
   const [passwordError, setPasswordError] = useState(false);
+  const errorId = errorMsg ? "login-error-message" : undefined;
 
+  // 当前提交逻辑仍然是前端演示：先做基础校验，再模拟一次登录失败。
   const onSubmit = async (e) => {
     e.preventDefault();
     setEmailError(false);
@@ -61,14 +63,10 @@ function App() {
             isPasswordFocused={isPasswordFocused}
             showPassword={showPassword}
             passwordLength={password.length}
+            isSubmitting={isSubmitting}
           />
         </div>
 
-        <div className="footer-links">
-          <a href="#">Privacy Policy</a>
-          <a href="#">Terms of Service</a>
-          <a href="#">Contact</a>
-        </div>
       </div>
 
       <div className="right-panel">
@@ -87,7 +85,7 @@ function App() {
             <p>Please enter your details</p>
           </div>
 
-          <form onSubmit={onSubmit}>
+          <form onSubmit={onSubmit} noValidate aria-busy={isSubmitting}>
             <div className="form-group">
               <label htmlFor="email" className={emailError ? "error-label" : ""}>
                 Email
@@ -105,8 +103,10 @@ function App() {
                   onFocus={() => setIsTyping(true)}
                   onBlur={() => setIsTyping(false)}
                   placeholder="you@example.com"
-                  autoComplete="off"
+                  autoComplete="email"
                   className={emailError ? "error" : ""}
+                  aria-invalid={emailError}
+                  aria-describedby={errorId}
                 />
               </div>
             </div>
@@ -129,11 +129,16 @@ function App() {
                   onBlur={() => setIsPasswordFocused(false)}
                   placeholder="********"
                   className={passwordError ? "error" : ""}
+                  autoComplete="current-password"
+                  aria-invalid={passwordError}
+                  aria-describedby={errorId}
                 />
                 <button
                   type="button"
                   className="toggle-password"
                   onClick={() => setShowPassword((prev) => !prev)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-pressed={showPassword}
                 >
                   {showPassword ? (
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -159,7 +164,15 @@ function App() {
               </a>
             </div>
 
-            {errorMsg ? <div className="error-msg show">{errorMsg}</div> : null}
+            <div
+              id="login-error-message"
+              className={`error-msg ${errorMsg ? "show" : ""}`}
+              role="alert"
+              aria-live="polite"
+              aria-hidden={!errorMsg}
+            >
+              {errorMsg || "\u00A0"}
+            </div>
 
             <button type="submit" className="btn-login" disabled={isSubmitting}>
               <span className="btn-text">{isSubmitting ? "Signing in..." : "Log In"}</span>
