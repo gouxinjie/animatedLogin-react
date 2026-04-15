@@ -249,6 +249,7 @@ body {
 }
 
 .btn-login {
+  --login-button-hover-bg: #5b21b6;
   border: 1.5px solid #1a1a2e;
   background: #1a1a2e;
   color: #fff;
@@ -290,6 +291,37 @@ body {
   border-radius: 25px;
 }
 
+.btn-login .btn-hover-content {
+  background: var(--login-button-hover-bg);
+}
+
+.btn-login::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 20%, rgba(255, 255, 255, 0.24) 50%, transparent 80%);
+  transform: translateX(-120%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.btn-login.is-submitting::after {
+  opacity: 1;
+  animation: buttonSweep 1.1s linear infinite;
+}
+
+.btn-login.is-success {
+  --login-button-hover-bg: #166534;
+  border-color: #15803d;
+  background: #15803d;
+}
+
+.btn-login.is-error {
+  --login-button-hover-bg: #991b1b;
+  border-color: #b91c1c;
+  animation: loginButtonError 0.42s ease;
+}
+
 .btn-login:not(:disabled):hover .btn-text,
 .btn-google:not(:disabled):hover .btn-text {
   transform: translateX(40px);
@@ -323,12 +355,11 @@ body {
   text-decoration: underline;
 }
 
-.error-msg {
+.status-msg {
   display: block;
   min-height: 44px;
   padding: 10px 14px;
   font-size: 13px;
-  color: #dc2626;
   background: transparent;
   border: 1px solid transparent;
   border-radius: 10px;
@@ -338,11 +369,27 @@ body {
   transition: opacity 0.2s ease, transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
 }
 
-.error-msg.show {
-  background: rgba(220, 38, 38, 0.08);
-  border-color: rgba(220, 38, 38, 0.2);
+.status-msg.show {
   opacity: 1;
   transform: translateY(0);
+}
+
+.status-msg.error {
+  color: #dc2626;
+}
+
+.status-msg.error.show {
+  background: rgba(220, 38, 38, 0.08);
+  border-color: rgba(220, 38, 38, 0.2);
+}
+
+.status-msg.success {
+  color: #15803d;
+}
+
+.status-msg.success.show {
+  background: rgba(22, 163, 74, 0.08);
+  border-color: rgba(22, 163, 74, 0.2);
 }
 
 .form-group input.error {
@@ -353,12 +400,164 @@ body {
   color: #dc2626;
 }
 
+@keyframes introFadeUp {
+  0% {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes introPop {
+  0% {
+    opacity: 0;
+    transform: scale(0.75) rotate(-10deg);
+  }
+  65% {
+    opacity: 1;
+    transform: scale(1.06) rotate(2deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+@keyframes introCharacters {
+  0% {
+    opacity: 0;
+    transform: translateY(48px) scale(0.92);
+    filter: blur(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+.intro-fade-up,
+.intro-pop,
+.intro-characters {
+  opacity: 0;
+  animation-fill-mode: forwards;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.intro-fade-up {
+  animation-name: introFadeUp;
+  animation-duration: 0.7s;
+}
+
+.intro-pop {
+  animation-name: introPop;
+  animation-duration: 0.7s;
+}
+
+.intro-characters {
+  animation-name: introCharacters;
+  animation-duration: 0.95s;
+}
+
+.intro-delay-1 {
+  animation-delay: 0.08s;
+}
+
+.intro-delay-2 {
+  animation-delay: 0.16s;
+}
+
+.intro-delay-3 {
+  animation-delay: 0.24s;
+}
+
+.intro-delay-4 {
+  animation-delay: 0.32s;
+}
+
+.intro-delay-5 {
+  animation-delay: 0.4s;
+}
+
+.intro-delay-6 {
+  animation-delay: 0.48s;
+}
+
+.intro-delay-7 {
+  animation-delay: 0.56s;
+}
+
+.intro-delay-8 {
+  animation-delay: 0.64s;
+}
+
+.intro-delay-9 {
+  animation-delay: 0.72s;
+}
+
 @keyframes charactersCelebrate {
   0% {
     transform: translateY(0) scale(1);
   }
   100% {
     transform: translateY(-10px) scale(1.015);
+  }
+}
+
+@keyframes charactersPreparing {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-6px) scale(1.01);
+  }
+}
+
+@keyframes charactersError {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-8px);
+  }
+  40% {
+    transform: translateX(6px);
+  }
+  60% {
+    transform: translateX(-4px);
+  }
+  80% {
+    transform: translateX(3px);
+  }
+}
+
+@keyframes buttonSweep {
+  from {
+    transform: translateX(-120%);
+  }
+  to {
+    transform: translateX(120%);
+  }
+}
+
+@keyframes loginButtonError {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-6px);
+  }
+  50% {
+    transform: translateX(5px);
+  }
+  75% {
+    transform: translateX(-3px);
   }
 }
 

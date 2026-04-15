@@ -1,83 +1,141 @@
-# 动画角色登录页面 (Animated Login Page)
+# Animated Login React
 
-一个带有交互动画角色的 React 登录页面，采用 Vite 构建。
+一个基于 React + Vite 的交互式登录页示例。页面左侧是会响应用户操作的抽象角色动画，右侧是登录表单。这个项目目前以视觉演示为主，重点在状态联动、角色反馈和按钮动效，而不是后端认证。
 
-## 🎯 特性
+## 项目概览
 
-- **交互动画角色**：左侧面板展示了四个可爱的动画角色（紫色、黑色、橙色、黄色），它们会响应用户的输入行为
-- **智能眼睛跟随**：角色的眼睛会跟随鼠标移动，仿佛在观察你的操作
-- **输入状态反馈**：
-  - 输入邮箱时，角色会看向输入框
-  - 输入密码时，角色会做出害羞反应（遮眼/转头）
-  - 提交表单时，角色会摇头表示拒绝
-- **视觉设计**：
-  - 渐变背景配合柔和的模糊光效
-  - 现代化表单设计，支持显示/隐藏密码
-  - 按钮悬停动画效果
-  - 响应式布局，移动端自动隐藏动画角色
+- 左侧展示 4 个抽象角色，它们会根据鼠标、邮箱输入、密码输入和提交结果改变视线与姿态。
+- 右侧是一个演示用登录表单，包含邮箱校验、密码长度校验、显示/隐藏密码和提交状态反馈。
+- 登录流程是前端模拟：
+  - 正确密码固定为 `123456`
+  - 成功时显示成功提示并触发庆祝动效
+  - 失败时显示错误提示并触发失败反馈动效
 
-## 🛠️ 技术栈
+## 主要交互与动效
+
+### 角色联动
+左侧面板展示了四个可爱的动画角色（紫色、黑色、橙色、黄色），它们会响应用户的输入行为：
+- 眼球会跟随鼠标移动。
+- 角色会随机眨眼，保持“活着”的感觉。
+- 输入邮箱时，角色会短暂看向输入区域。
+- 聚焦密码框且密码隐藏时，角色会朝另一边看，形成“回避偷看密码”的反馈。
+- 显示密码时，紫色角色会出现随机“偷看”动作。
+- 
+## 效果截图
+
+### 提交状态
+
+- `submitting`：
+  - 登录按钮显示扫光动画
+  - 左侧角色进入准备中的轻微起伏状态
+- `success`：
+  - 按钮切换为成功色
+  - 表单显示成功提示
+  - 左侧角色触发庆祝动画和彩带/星光效果
+- `error`：
+  - 按钮触发轻微错误回弹
+  - 表单显示错误提示
+  - 左侧角色表现出失败反馈
+
+### 表单体验
+
+- 邮箱格式校验
+- 密码长度至少 6 位
+- 支持显示/隐藏密码
+- 提交中会锁定输入和按钮，避免并发提交导致状态错乱
+- 成功或失败后，再次编辑输入内容会回到普通交互态
+
+## 演示账号规则
+
+- 邮箱：任意合法邮箱格式
+- 密码：`123456`
+
+页面底部也会显示“正确密码为123456，演示专用”。
+
+## 技术栈
 
 - React 18
-- Vite
-- Tailwind CSS
-- CSS 动画
+- Vite 5
+- Tailwind CSS 4
+- 原生 CSS 动画
 
-## 📦 安装与运行
+## 本地运行
 
 ```bash
-# 安装依赖
 npm install
-
-# 启动开发服务器
 npm run dev
 ```
 
-访问本地地址（通常为 `http://localhost:5173`）。
+默认开发地址通常为 `http://localhost:5173`。
 
-## 📁 项目结构
+## 构建与预览
 
+```bash
+npm run build
+npm run preview
 ```
+
+## 项目结构
+
+```text
 src/
-├── App.jsx                 # 主页面组件，包含登录表单逻辑
-├── App.css                 # 全局样式
-├── main.jsx                # React 入口
-└── components/
-    └── animated-characters/
-        ├── AnimatedCharacters.jsx  # 动画角色核心组件
-        └── index.js
+├─ App.jsx
+├─ App.css
+├─ main.jsx
+└─ components/
+   ├─ index.js
+   └─ animated-characters/
+      ├─ AnimatedCharacters.jsx
+      └─ index.js
 ```
 
-## 🔌 复用动画组件
+### 关键文件说明
 
-动画角色组件是独立可复用的，可以集成到其他项目中：
+- `src/App.jsx`
+  - 登录表单主逻辑
+  - 校验、提交状态、提示文案
+  - 与角色组件的状态联动
+- `src/App.css`
+  - 页面布局
+  - 按钮、提示区、响应式和关键帧动画
+- `src/components/animated-characters/AnimatedCharacters.jsx`
+  - 角色绘制
+  - 鼠标跟随、眨眼、偷看、提交结果反馈等核心交互
 
-```jsx
-import { AnimatedCharacters } from "./components";
+## 组件输入参数
 
-<AnimatedCharacters
-  isTyping={isTyping}
-  isPasswordFocused={isPasswordFocused}
-  showPassword={showPassword}
-  passwordLength={password.length}
-/>
-```
-
-### Props 说明
+`AnimatedCharacters` 当前接收以下参数：
 
 | Prop | 类型 | 说明 |
-|------|------|------|
-| `isTyping` | boolean | 是否正在输入（邮箱） |
-| `isPasswordFocused` | boolean | 密码输入框是否获得焦点 |
-| `showPassword` | boolean | 密码是否可见 |
-| `passwordLength` | number | 密码长度 |
+| --- | --- | --- |
+| `isTyping` | `boolean` | 是否正在邮箱输入态 |
+| `isPasswordFocused` | `boolean` | 密码框是否聚焦 |
+| `showPassword` | `boolean` | 是否显示密码明文 |
+| `passwordLength` | `number` | 当前密码长度 |
+| `loginState` | `"idle" \| "submitting" \| "success" \| "error"` | 当前登录状态 |
 
-## 🎨 表单验证规则
+## 当前定位
 
-- **邮箱**：必须为有效的邮箱格式
-- **密码**：至少 6 个字符
-- 错误信息会显示在表单下方
+这个项目适合用来：
 
-## 📝 License
+- 演示登录页动效设计
+- 作为角色联动式表单的原型
+- 继续扩展成真实认证页面的 UI 基础
+
+它目前不包含：
+
+- 真实后端接口
+- 用户体系
+- token / session 管理
+- 路由跳转逻辑
+
+## 后续可扩展方向
+
+- 接入真实登录 API
+- 成功后跳转到 dashboard
+- 给左侧背景加轻微视差
+- 增加测试，覆盖登录状态机和交互回归
+
+## License
 
 MIT

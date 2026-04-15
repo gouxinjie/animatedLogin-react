@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-// 全组件共享一份鼠标坐标，避免每只眼睛各自监听 mousemove。
+// 全组件共享一份鼠标坐标，并用 requestAnimationFrame 节流，避免每只眼睛各自监听 mousemove。
 function usePointerPosition() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const frameRef = useRef(null);
@@ -34,7 +34,7 @@ function usePointerPosition() {
   return mousePosition;
 }
 
-// 随机眨眼节奏，保持角色处于“活着”的状态感。
+// 用随机间隔触发眨眼，让角色保持轻微生命感，而不是始终静止。
 function useBlinking(minDelay = 3000, maxDelay = 7000, duration = 150) {
   const [isBlinking, setIsBlinking] = useState(false);
 
@@ -69,7 +69,7 @@ function useBlinking(minDelay = 3000, maxDelay = 7000, duration = 150) {
   return isBlinking;
 }
 
-// 在显示密码时随机触发“偷看”动作，不改变原有交互时机。
+// 只有在明文显示密码时才随机触发“偷看”，这样不会打断正常输入联动。
 function usePeeking(enabled, minDelay = 2000, maxDelay = 5000, duration = 800) {
   const [isPeeking, setIsPeeking] = useState(false);
 
@@ -109,7 +109,7 @@ function usePeeking(enabled, minDelay = 2000, maxDelay = 5000, duration = 800) {
   return isPeeking;
 }
 
-// 根据鼠标与当前眼球中心点的夹角，计算瞳孔偏移量。
+// 根据鼠标与眼球中心的夹角，计算受限的视线偏移，避免眼珠移动过头。
 function calculateLookOffset(ref, mousePosition, maxDistance) {
   if (!ref.current) {
     return { x: 0, y: 0 };
@@ -257,7 +257,7 @@ export default function AnimatedCharacters({
   isPasswordFocused = false,
   showPassword = false,
   passwordLength = 0,
-  isSubmitting = false,
+  loginState = "idle",
 }) {
   const mousePosition = usePointerPosition();
   const isPurpleBlinking = useBlinking();
@@ -270,7 +270,7 @@ export default function AnimatedCharacters({
   const yellowRef = useRef(null);
   const orangeRef = useRef(null);
 
-  // 输入邮箱时角色会短暂互看，形成一个轻微的互动反馈。
+  // 邮箱输入时触发一次短暂互看，形成“注意到你开始输入”的剧情反馈。
   useEffect(() => {
     if (isTyping) {
       setIsLookingAtEachOther(true);
@@ -286,9 +286,11 @@ export default function AnimatedCharacters({
   const isHidingPassword = passwordLength > 0 && !showPassword;
   const isLookingAway = isPasswordFocused && !showPassword;
   const isPurplePeeking = usePeeking(isShowingPassword);
-  const isCelebrating = isSubmitting;
+  const isSubmitting = loginState === "submitting";
+  const isCelebrating = loginState === "success";
+  const isError = loginState === "error";
 
-  // 面部和身体都会跟随鼠标，但位移范围被限制在一个较小区间内。
+  // 面部位置和身体倾斜都会轻微跟随鼠标，但位移范围被限制在小区间内。
   const calculatePosition = (ref) => {
     if (!ref.current) return { faceX: 0, faceY: 0, bodySkew: 0 };
 
@@ -310,19 +312,20 @@ export default function AnimatedCharacters({
   const yellowPos = calculatePosition(yellowRef);
   const orangePos = calculatePosition(orangeRef);
 
+  // 不同登录状态会覆盖默认视线，保证提交成功/失败时角色反馈更明确。
   const purpleLook = {
-    x: isCelebrating ? 0 : isLookingAway ? -5 : isShowingPassword ? (isPurplePeeking ? 4 : -4) : isLookingAtEachOther ? 3 : undefined,
-    y: isCelebrating ? -2 : isLookingAway ? -5 : isShowingPassword ? (isPurplePeeking ? 5 : -4) : isLookingAtEachOther ? 4 : undefined,
+    x: isCelebrating ? 0 : isSubmitting ? 2 : isError ? -2 : isLookingAway ? -5 : isShowingPassword ? (isPurplePeeking ? 4 : -4) : isLookingAtEachOther ? 3 : undefined,
+    y: isCelebrating ? -2 : isSubmitting ? 2 : isError ? 4 : isLookingAway ? -5 : isShowingPassword ? (isPurplePeeking ? 5 : -4) : isLookingAtEachOther ? 4 : undefined,
   };
 
   const blackLook = {
-    x: isCelebrating ? 0 : isLookingAway ? -4 : isShowingPassword ? -4 : isLookingAtEachOther ? 0 : undefined,
-    y: isCelebrating ? -2 : isLookingAway ? -5 : isShowingPassword ? -4 : isLookingAtEachOther ? -4 : undefined,
+    x: isCelebrating ? 0 : isSubmitting ? -1 : isError ? 2 : isLookingAway ? -4 : isShowingPassword ? -4 : isLookingAtEachOther ? 0 : undefined,
+    y: isCelebrating ? -2 : isSubmitting ? 2 : isError ? 4 : isLookingAway ? -5 : isShowingPassword ? -4 : isLookingAtEachOther ? -4 : undefined,
   };
 
   const lowerCharactersLook = {
-    x: isCelebrating ? 0 : isLookingAway ? -5 : isShowingPassword ? -5 : undefined,
-    y: isCelebrating ? -2 : isLookingAway ? -5 : isShowingPassword ? -4 : undefined,
+    x: isCelebrating ? 0 : isSubmitting ? 0 : isError ? 0 : isLookingAway ? -5 : isShowingPassword ? -5 : undefined,
+    y: isCelebrating ? -2 : isSubmitting ? 2 : isError ? 5 : isLookingAway ? -5 : isShowingPassword ? -4 : undefined,
   };
 
   return (
@@ -331,7 +334,13 @@ export default function AnimatedCharacters({
         position: "relative",
         width: "550px",
         height: "400px",
-        animation: isCelebrating ? "charactersCelebrate 0.9s ease-in-out infinite alternate" : "none",
+        animation: isCelebrating
+          ? "charactersCelebrate 0.9s ease-in-out infinite alternate"
+          : isSubmitting
+            ? "charactersPreparing 1.15s ease-in-out infinite"
+            : isError
+              ? "charactersError 0.55s ease-in-out 1"
+              : "none",
       }}
     >
       {isCelebrating ? (
@@ -348,7 +357,7 @@ export default function AnimatedCharacters({
         </>
       ) : null}
 
-      {/* 紫色角色承担主要表情变化：转头、偷看和跟随输入状态。 */}
+      {/* 紫色角色承担主要表情变化：转头、偷看和大部分输入反馈。 */}
       <div
         ref={purpleRef}
         style={{
@@ -362,13 +371,17 @@ export default function AnimatedCharacters({
           zIndex: 1,
           transform: isCelebrating
             ? "skewX(-6deg) translateY(-18px) rotate(-4deg) translateZ(0)"
-            : isShowingPassword
-              ? "skewX(0deg) translateZ(0)"
-              : isLookingAway
-                ? "skewX(-14deg) translateX(-20px) translateZ(0)"
-                : isTyping || isHidingPassword
-                  ? `skewX(${purplePos.bodySkew - 12}deg) translateX(40px) translateZ(0)`
-                  : `skewX(${purplePos.bodySkew}deg) translateZ(0)`,
+            : isSubmitting
+              ? "skewX(-8deg) translateY(-10px) rotate(-2deg) translateZ(0)"
+              : isError
+                ? "skewX(8deg) translateX(-10px) rotate(2deg) translateZ(0)"
+                : isShowingPassword
+                  ? "skewX(0deg) translateZ(0)"
+                  : isLookingAway
+                    ? "skewX(-14deg) translateX(-20px) translateZ(0)"
+                    : isTyping || isHidingPassword
+                      ? `skewX(${purplePos.bodySkew - 12}deg) translateX(40px) translateZ(0)`
+                      : `skewX(${purplePos.bodySkew}deg) translateZ(0)`,
           transformOrigin: "bottom center",
           willChange: "transform, height",
           backfaceVisibility: "hidden",
@@ -383,22 +396,30 @@ export default function AnimatedCharacters({
             gap: "32px",
             left: isCelebrating
               ? "48px"
-              : isLookingAway
-                ? "20px"
-                : isShowingPassword
-                  ? "20px"
-                  : isLookingAtEachOther
-                    ? "55px"
-                    : `${45 + purplePos.faceX}px`,
+              : isSubmitting
+                ? "52px"
+                : isError
+                  ? "40px"
+                  : isLookingAway
+                    ? "20px"
+                    : isShowingPassword
+                      ? "20px"
+                      : isLookingAtEachOther
+                        ? "55px"
+                        : `${45 + purplePos.faceX}px`,
             top: isCelebrating
               ? "54px"
-              : isLookingAway
-                ? "25px"
-                : isShowingPassword
-                  ? "35px"
-                  : isLookingAtEachOther
-                    ? "65px"
-                    : `${40 + purplePos.faceY}px`,
+              : isSubmitting
+                ? "62px"
+                : isError
+                  ? "46px"
+                  : isLookingAway
+                    ? "25px"
+                    : isShowingPassword
+                      ? "35px"
+                      : isLookingAtEachOther
+                        ? "65px"
+                        : `${40 + purplePos.faceY}px`,
             transition: "all 0.7s ease-in-out",
           }}
         >
@@ -423,7 +444,7 @@ export default function AnimatedCharacters({
         </div>
       </div>
 
-      {/* 黑色角色主要负责与紫色角色的“互看”配合。 */}
+      {/* 黑色角色主要负责和紫色角色做互看配合，强化注意力转移。 */}
       <div
         ref={blackRef}
         style={{
@@ -437,15 +458,19 @@ export default function AnimatedCharacters({
           zIndex: 2,
           transform: isCelebrating
             ? "skewX(8deg) translateY(-30px) rotate(6deg) translateZ(0)"
-            : isShowingPassword
-              ? "skewX(0deg) translateZ(0)"
-              : isLookingAway
-                ? "skewX(12deg) translateX(-10px) translateZ(0)"
-                : isLookingAtEachOther
-                  ? `skewX(${blackPos.bodySkew * 1.5 + 10}deg) translateX(20px) translateZ(0)`
-                  : isTyping || isHidingPassword
-                    ? `skewX(${blackPos.bodySkew * 1.5}deg) translateZ(0)`
-                    : `skewX(${blackPos.bodySkew}deg) translateZ(0)`,
+            : isSubmitting
+              ? "skewX(5deg) translateY(-16px) rotate(2deg) translateZ(0)"
+              : isError
+                ? "skewX(-10deg) translateX(12px) rotate(-2deg) translateZ(0)"
+                : isShowingPassword
+                  ? "skewX(0deg) translateZ(0)"
+                  : isLookingAway
+                    ? "skewX(12deg) translateX(-10px) translateZ(0)"
+                    : isLookingAtEachOther
+                      ? `skewX(${blackPos.bodySkew * 1.5 + 10}deg) translateX(20px) translateZ(0)`
+                      : isTyping || isHidingPassword
+                        ? `skewX(${blackPos.bodySkew * 1.5}deg) translateZ(0)`
+                        : `skewX(${blackPos.bodySkew}deg) translateZ(0)`,
           transformOrigin: "bottom center",
           willChange: "transform",
           backfaceVisibility: "hidden",
@@ -460,22 +485,30 @@ export default function AnimatedCharacters({
             gap: "24px",
             left: isCelebrating
               ? "28px"
-              : isLookingAway
-                ? "10px"
-                : isShowingPassword
-                  ? "10px"
-                  : isLookingAtEachOther
-                    ? "32px"
-                    : `${26 + blackPos.faceX}px`,
+              : isSubmitting
+                ? "30px"
+                : isError
+                  ? "24px"
+                  : isLookingAway
+                    ? "10px"
+                    : isShowingPassword
+                      ? "10px"
+                      : isLookingAtEachOther
+                        ? "32px"
+                        : `${26 + blackPos.faceX}px`,
             top: isCelebrating
               ? "24px"
-              : isLookingAway
-                ? "20px"
-                : isShowingPassword
-                  ? "28px"
-                  : isLookingAtEachOther
-                    ? "12px"
-                    : `${32 + blackPos.faceY}px`,
+              : isSubmitting
+                ? "34px"
+                : isError
+                  ? "30px"
+                  : isLookingAway
+                    ? "20px"
+                    : isShowingPassword
+                      ? "28px"
+                      : isLookingAtEachOther
+                        ? "12px"
+                        : `${32 + blackPos.faceY}px`,
             transition: "all 0.7s ease-in-out",
           }}
         >
@@ -500,7 +533,7 @@ export default function AnimatedCharacters({
         </div>
       </div>
 
-      {/* 下方两个角色只做较轻量的视线跟随，避免画面过于嘈杂。 */}
+      {/* 下方两个角色只做更轻的视线和嘴型变化，避免画面过于嘈杂。 */}
       <div
         ref={orangeRef}
         style={{
@@ -514,9 +547,13 @@ export default function AnimatedCharacters({
           borderRadius: "120px 120px 0 0",
           transform: isCelebrating
             ? "skewX(-4deg) translateY(-12px) rotate(-2deg) translateZ(0)"
-            : isShowingPassword
-              ? "skewX(0deg) translateZ(0)"
-              : `skewX(${orangePos.bodySkew}deg) translateZ(0)`,
+            : isSubmitting
+              ? "skewX(-2deg) translateY(-8px) translateZ(0)"
+              : isError
+                ? "skewX(3deg) translateY(4px) rotate(1deg) translateZ(0)"
+                : isShowingPassword
+                  ? "skewX(0deg) translateZ(0)"
+                  : `skewX(${orangePos.bodySkew}deg) translateZ(0)`,
           transformOrigin: "bottom center",
           willChange: "transform",
           backfaceVisibility: "hidden",
@@ -531,7 +568,7 @@ export default function AnimatedCharacters({
             display: "flex",
             gap: "32px",
             left: isCelebrating ? "84px" : isLookingAway ? "50px" : isShowingPassword ? "50px" : `${82 + orangePos.faceX}px`,
-            top: isCelebrating ? "78px" : isLookingAway ? "75px" : isShowingPassword ? "85px" : `${90 + orangePos.faceY}px`,
+            top: isCelebrating ? "78px" : isSubmitting ? "84px" : isLookingAway ? "75px" : isShowingPassword ? "85px" : `${90 + orangePos.faceY}px`,
             transition: "all 0.2s ease-out",
           }}
         >
@@ -557,9 +594,10 @@ export default function AnimatedCharacters({
             top: isCelebrating ? "118px" : "132px",
             width: "56px",
             height: "26px",
-            borderBottom: "4px solid #2D2D2D",
-            borderRadius: "0 0 56px 56px",
-            opacity: isCelebrating ? 1 : 0,
+            borderBottom: isError ? "none" : "4px solid #2D2D2D",
+            borderTop: isError ? "4px solid #2D2D2D" : "none",
+            borderRadius: isError ? "56px 56px 0 0" : "0 0 56px 56px",
+            opacity: isCelebrating || isError ? 1 : 0,
             transition: "all 0.3s ease-out",
           }}
         />
@@ -578,9 +616,13 @@ export default function AnimatedCharacters({
           zIndex: 4,
           transform: isCelebrating
             ? "skewX(4deg) translateY(-20px) rotate(3deg) translateZ(0)"
-            : isShowingPassword
-              ? "skewX(0deg) translateZ(0)"
-              : `skewX(${yellowPos.bodySkew}deg) translateZ(0)`,
+            : isSubmitting
+              ? "skewX(2deg) translateY(-10px) rotate(1deg) translateZ(0)"
+              : isError
+                ? "skewX(-4deg) translateY(4px) rotate(-1deg) translateZ(0)"
+                : isShowingPassword
+                  ? "skewX(0deg) translateZ(0)"
+                  : `skewX(${yellowPos.bodySkew}deg) translateZ(0)`,
           transformOrigin: "bottom center",
           willChange: "transform",
           backfaceVisibility: "hidden",
@@ -595,7 +637,7 @@ export default function AnimatedCharacters({
             display: "flex",
             gap: "24px",
             left: isCelebrating ? "52px" : isLookingAway ? "20px" : isShowingPassword ? "20px" : `${52 + yellowPos.faceX}px`,
-            top: isCelebrating ? "36px" : isLookingAway ? "30px" : isShowingPassword ? "35px" : `${40 + yellowPos.faceY}px`,
+            top: isCelebrating ? "36px" : isSubmitting ? "42px" : isLookingAway ? "30px" : isShowingPassword ? "35px" : `${40 + yellowPos.faceY}px`,
             transition: "all 0.2s ease-out",
           }}
         >
@@ -620,10 +662,10 @@ export default function AnimatedCharacters({
             width: "80px",
             height: "4px",
             backgroundColor: "#2D2D2D",
-            borderRadius: isCelebrating ? "0 0 999px 999px" : "999px",
+            borderRadius: isCelebrating ? "0 0 999px 999px" : isError ? "999px 999px 0 0" : "999px",
             left: isCelebrating ? "32px" : isLookingAway ? "15px" : isShowingPassword ? "10px" : `${40 + yellowPos.faceX}px`,
-            top: isCelebrating ? "88px" : isLookingAway ? "78px" : isShowingPassword ? "88px" : `${88 + yellowPos.faceY}px`,
-            transform: isCelebrating ? "scaleX(0.85)" : "none",
+            top: isCelebrating ? "88px" : isSubmitting ? "94px" : isLookingAway ? "78px" : isShowingPassword ? "88px" : `${88 + yellowPos.faceY}px`,
+            transform: isCelebrating ? "scaleX(0.85)" : isError ? "scaleX(0.6)" : isSubmitting ? "scaleX(0.72)" : "none",
             transition: "all 0.2s ease-out",
           }}
         />
