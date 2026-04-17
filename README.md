@@ -14,14 +14,31 @@
 ## 主要交互与动效
 
 ### 角色联动
+
 左侧面板展示了四个可爱的动画角色（紫色、黑色、橙色、黄色），它们会响应用户的输入行为：
+
 - 眼球会跟随鼠标移动。
 - 角色会随机眨眼，保持“活着”的感觉。
 - 输入邮箱时，角色会短暂看向输入区域。
 - 聚焦密码框且密码隐藏时，角色会朝另一边看，形成“回避偷看密码”的反馈。
 - 显示密码时，紫色角色会出现随机“偷看”动作。
-- 
+-
+
 ## 效果截图
+
+![1](./images/1.png)
+
+---
+
+![2](./images/2.png)
+
+---
+
+![3](./images/3.png)
+
+---
+
+![4](./images/4.png)
 
 ### 提交状态
 
@@ -106,13 +123,13 @@ src/
 
 `AnimatedCharacters` 当前接收以下参数：
 
-| Prop | 类型 | 说明 |
-| --- | --- | --- |
-| `isTyping` | `boolean` | 是否正在邮箱输入态 |
-| `isPasswordFocused` | `boolean` | 密码框是否聚焦 |
-| `showPassword` | `boolean` | 是否显示密码明文 |
-| `passwordLength` | `number` | 当前密码长度 |
-| `loginState` | `"idle" \| "submitting" \| "success" \| "error"` | 当前登录状态 |
+| Prop                | 类型                                             | 说明               |
+| ------------------- | ------------------------------------------------ | ------------------ |
+| `isTyping`          | `boolean`                                        | 是否正在邮箱输入态 |
+| `isPasswordFocused` | `boolean`                                        | 密码框是否聚焦     |
+| `showPassword`      | `boolean`                                        | 是否显示密码明文   |
+| `passwordLength`    | `number`                                         | 当前密码长度       |
+| `loginState`        | `"idle" \| "submitting" \| "success" \| "error"` | 当前登录状态       |
 
 ## 当前定位
 
